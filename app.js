@@ -1,0 +1,105 @@
+const express = require("express");
+const path = require("path");
+const {check, validationResult} = require('express-validator');
+const mongoose = require("mongoose");
+const session = require("express-session");
+
+const Admin = mongoose.model("Admin", {
+    username: String,
+    password: String
+});
+
+const app = express();
+
+app.use(session({
+    secret: "mysecret",
+    resave: false,
+    saveUninitialized: true
+}));
+
+// Connection caching for serverless
+let isConnected = false;
+async function connectDB() {
+    if (isConnected) return;
+    await mongoose.connect("mongodb+srv://alexbadila:Yo3kpaxy@cluster0.bwb3wky.mongodb.net/CMSWebsite");
+    isConnected = true;
+}
+
+// app.get("/setup", async (req, res) => {
+//     await connectDB();
+//     const admin = new Admin({
+//         username: "alex",
+//         password: "Yo3kpaxy"
+//     });
+//     admin.save().then(data => {
+//         res.send("Admin created: " + JSON.stringify(data));
+//     }).catch(err => {
+//         res.send("Error: " + err);
+//     });
+// });
+
+app.use(express.urlencoded({extended: false}));
+app.set("views", path.join(__dirname, "views"));
+app.use(express.static(__dirname + "/public"));
+app.set("view engine", "ejs");
+
+// Render the home page if the user is logged in
+app.get("/", async (req, res) => {
+    if(req.session.loggedIn) {
+        res.render("home");
+    }
+    else {
+        res.redirect("/login");
+    }
+});
+
+// Render the login page
+app.get("/login", async (req, res) => {
+    res.render("login");
+});
+
+// Take in the login information and validate it
+// Go to the home page if it's correct
+app.post("/login", [
+    check("uname", "UserName Empty").notEmpty(),
+    check("pass", "Password Empty").notEmpty()
+], async (req, res) => {
+    let errors = validationResult(req);
+
+    if(errors.isEmpty())
+    {
+        await connectDB();
+        Admin.findOne({ username: req.body.uname }).then((data) => {
+            if (data === null || data.password !== req.body.pass) {
+                res.render("login", { loginError: "Username or Password Incorrect" });
+            } 
+            else {
+                req.session.loggedIn  = true;
+                req.session.user = data.username;
+                res.render("home", {logged:{
+                    name: req.session.user ,
+                    status: req.session.loggedIn
+                }});
+                // res.redirect("/");
+            }
+        }).catch((err) => {
+            console.log(err);
+        });
+    }
+});
+
+// Logs the user out of the session
+app.get("/logout", async (req, res) => {
+    req.session.destroy();
+    res.redirect("/login");
+});
+
+// Export for Vercel
+module.exports = app;
+
+// Only listen when running locally
+if (process.env.NODE_ENV !== "production") {
+    app.listen(3000, () => {
+        console.log('Server running on http://localhost:3000');
+    });
+}

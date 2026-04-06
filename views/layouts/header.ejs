@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>CMS Website</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript" src="/js/form.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Bilbo+Swash+Caps" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css?family=Kalam" rel="stylesheet"> 
+    <link rel="stylesheet" type="text/css" href="/css/form.css">
+</head>
+<body>
+    <header>
+        <% if(typeof(logged) !== "undefined") {%>
+            <p>Welcome <%= logged.name %></p>
+            &nbsp; <a href="/logout">Logout</a>
+        <% } else { %>
+            <p><a href="/login">Log In</a></p>
+        <% } %>
+    </header>
