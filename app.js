@@ -98,7 +98,7 @@ app.post("/processForm", [
         });
 
         newPage.save().then(data => {
-            res.render("newPage", {newPageInfo: data});
+            res.redirect("/");
         }).catch(err => {
             console.log("Data Saving Error!!!");
         });
@@ -108,10 +108,26 @@ app.post("/processForm", [
     }
 });
 
+// Render a specific page that has been created by the user
+app.get("/page/:id", async (req, res) => {
+    if(req.session.loggedIn) {
+        await connectDB();
+        const page = await Page.findById(req.params.id);
+        res.render("page", { page: page });
+    } else {
+        res.redirect("/login");
+    }
+});
+
 // Render the home page if the user is logged in
 app.get("/", async (req, res) => {
     if(req.session.loggedIn) {
-        res.render("home");
+        await connectDB();
+        const pages = await Page.find();  // Fetch all pages
+        res.render("home", { data: pages, logged:{
+                    name: req.session.user,
+                    status: req.session.loggedIn
+        }});  // Pass them as "data", along with the logged in status
     }
     else {
         res.redirect("/login");
@@ -141,11 +157,11 @@ app.post("/login", [
             else {
                 req.session.loggedIn  = true;
                 req.session.user = data.username;
-                res.render("home", {logged:{
-                    name: req.session.user ,
-                    status: req.session.loggedIn
-                }});
-                // res.redirect("/");
+                // res.render("home", {logged:{
+                //     name: req.session.user ,
+                //     status: req.session.loggedIn
+                // }});
+                res.redirect("/");
             }
         }).catch((err) => {
             console.log(err);

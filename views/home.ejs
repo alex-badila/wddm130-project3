@@ -1,5 +1,10 @@
 <%- include("layouts/header"); -%>
 <%- include("layouts/nav"); -%>
 <h1>Welcome!</h1>
+<% if(typeof(data) !== "undefined") {
+    data.forEach(page => {%>
+        <h2><a href="/page/<%= page._id %>"><%= page.title %></a></h2>
+    <% }) %>
+<% } %>
 <a href="/newPage">Add New Page</a>
 <%- include("layouts/footer"); -%>
