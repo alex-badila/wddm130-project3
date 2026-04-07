@@ -3,6 +3,13 @@ const path = require("path");
 const {check, validationResult} = require('express-validator');
 const mongoose = require("mongoose");
 const session = require("express-session");
+const fileUpload = require("express-fileupload");
+
+const Page = mongoose.model("Page", {
+    title: String,
+    image: String,
+    body: String
+});
 
 const Admin = mongoose.model("Admin", {
     username: String,
@@ -10,6 +17,8 @@ const Admin = mongoose.model("Admin", {
 });
 
 const app = express();
+
+app.use(fileUpload());
 
 app.use(session({
     secret: "mysecret",
@@ -42,6 +51,62 @@ app.use(express.urlencoded({extended: false}));
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(__dirname + "/public"));
 app.set("view engine", "ejs");
+
+// Render the page for adding a new page if the user is logged in
+app.get("/newPage", async (req, res) => {
+    if(req.session.loggedIn) {
+        res.render("newPage");
+    }
+    else {
+        res.redirect("/login");
+    }
+});
+
+// Process the form for making a new page
+app.post("/processForm", [
+    check("title", "Title is empty").notEmpty(),
+    check("body", "Body is empty").notEmpty()
+], async (req, res) => {
+    const errors = validationResult(req);
+
+    if (!req.files || !req.files.image) {
+        return res.render("newPage", { errors: [{ msg: "Image is empty" }] });
+    }
+
+    if(errors.isEmpty()) {
+        let title = req.body.title;
+        let imageName = req.files.image.name;
+        let image = req.files.image;
+        let imagePath = "public/images/" + imageName;
+        let body = req.body.body;
+
+        image.mv(imagePath, function(err) {
+            console.log(err);
+        });
+
+        let newPageInfo = {
+            "title": title,
+            "image": imageName,
+            "body": body
+        }
+
+        await connectDB();
+        let newPage = new Page({
+            title: newPageInfo.title,
+            image: newPageInfo.image,
+            body: newPageInfo.body
+        });
+
+        newPage.save().then(data => {
+            res.render("newPage", {newPageInfo: data});
+        }).catch(err => {
+            console.log("Data Saving Error!!!");
+        });
+
+    } else {
+        res.render("newPage", {errors: errors.array()});
+    }
+});
 
 // Render the home page if the user is logged in
 app.get("/", async (req, res) => {

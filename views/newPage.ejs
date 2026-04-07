@@ -1,0 +1,31 @@
+<%- include("layouts/header"); -%>
+<%- include("layouts/nav"); -%>
+<form name="myform" method="Post" action="/processForm" enctype="multipart/form-data">
+    <label>Title</label>
+    <input id="title" type="text" name="title"><br/>
+
+    <label for="image">Image</label>
+    <input id="image" type="file" name="image"><br/>
+
+    <label>Body</label>
+    <textarea id="body" name="body"></textarea><br/>
+
+    <input type="submit" value="Submit">
+    <p id="errors">
+      <% if(typeof(errors) != "undefined") { 
+        for(let error of errors) {%>
+          <h3><%= error.msg %></h3>
+
+      <%}}%>
+
+    </p>
+</form>
+<div>
+    <% if(typeof(newPageInfo) !== "undefined"){%>
+      <h1><%= newPageInfo.title %></h1>
+      <img src="/images/<%= newPageInfo.image %>" />
+      <p><%= newPageInfo.body %></p>
+    <%}%>
+</div>
+
+<%- include("layouts/footer"); -%>
